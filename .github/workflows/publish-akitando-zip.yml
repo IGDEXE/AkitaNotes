@@ -42,6 +42,7 @@ jobs:
 
   veracode-sca:
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -75,6 +76,7 @@ jobs:
           criticality: VeryHigh
           appname: ${{ github.repository }}
           createprofile: true
+          teams: DEMOs
           filepath: veracode-scan.zip
           deleteincompletescan: 1
           version: ${{ github.run_id }}

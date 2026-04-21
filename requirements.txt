@@ -1,0 +1,3 @@
+# This project intentionally uses only Python's standard library.
+# The file exists so dependency scanners such as Veracode SCA can
+# detect the repository as a supported Python project.

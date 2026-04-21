@@ -14,6 +14,11 @@ Neste projeto, a ideia é transformar os posts dessa série em arquivos Markdown
 py scripts/export_akita_akitando.py
 ```
 
+Dependências de runtime:
+
+- nenhuma dependência externa; o script usa apenas a biblioteca padrão do Python
+- o arquivo `requirements.txt` existe para ferramentas de SCA reconhecerem o projeto como Python
+
 Arquivos de saída:
 
 - `output/akitando/*.md`
@@ -39,14 +44,14 @@ O artifact publicado se chama `akitando-export-zip`.
 
 Validações de segurança adicionadas no mesmo workflow:
 
-- `Veracode SCA`
+- `Veracode SCA` opcional para projetos sem dependências externas suportadas
 - `Veracode Upload and Scan`
 - `Veracode Pipeline Scan`
 
 Ordem dos estágios:
 
 - `veracode-package`: monta o zip que a Veracode vai analisar
-- `veracode-sca`
+- `veracode-sca` opcional, não bloqueia a publicação do artefato
 - `veracode-upload-and-scan`
 - `veracode-pipeline-scan`
 - `package`: só executa se todas as validações anteriores passarem
