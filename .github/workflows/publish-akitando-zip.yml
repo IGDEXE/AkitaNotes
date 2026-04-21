@@ -1,0 +1,129 @@
+name: Publish Akitando Zip
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/publish-akitando-zip.yml"
+      - "scripts/export_akita_akitando.py"
+      - "README.md"
+
+permissions:
+  contents: read
+
+jobs:
+  veracode-package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create Veracode scan package
+        run: |
+          zip -r veracode-scan.zip . \
+            -x ".git/*" \
+            -x ".github/*" \
+            -x "dist/*" \
+            -x "output/*" \
+            -x "tmp/*" \
+            -x "scripts/__pycache__/*" \
+            -x "**/__pycache__/*" \
+            -x "*.pyc"
+
+      - name: Upload Veracode package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: veracode-scan-package
+          path: veracode-scan.zip
+          if-no-files-found: error
+          retention-days: 7
+
+  veracode-sca:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Veracode SCA
+        env:
+          SRCCLR_API_TOKEN: ${{ secrets.SCA }}
+        run: |
+          curl -sSL 'https://download.sourceclear.com/ci.sh' | bash -s -- scan --update-advisor --allow-dirty
+
+  veracode-upload-and-scan:
+    runs-on: ubuntu-latest
+    needs: veracode-package
+    steps:
+      - name: Download Veracode package
+        uses: actions/download-artifact@v4
+        with:
+          name: veracode-scan-package
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Upload and scan with Veracode
+        uses: veracode/veracode-uploadandscan-action@0.2.11
+        with:
+          vid: ${{ secrets.VeracodeID }}
+          vkey: ${{ secrets.VeracodeKey }}
+          criticality: VeryHigh
+          appname: ${{ github.repository }}
+          createprofile: true
+          filepath: veracode-scan.zip
+          deleteincompletescan: 1
+          version: ${{ github.run_id }}
+
+  veracode-pipeline-scan:
+    runs-on: ubuntu-latest
+    needs: veracode-package
+    steps:
+      - name: Download Veracode package
+        uses: actions/download-artifact@v4
+        with:
+          name: veracode-scan-package
+
+      - name: Run Veracode Pipeline Scan
+        uses: veracode/Veracode-pipeline-scan-action@v1.0.20
+        with:
+          vid: ${{ secrets.VeracodeID }}
+          vkey: ${{ secrets.VeracodeKey }}
+          file: veracode-scan.zip
+          issue_details: true
+
+  Publish:
+    runs-on: ubuntu-latest
+    needs:
+      - veracode-sca
+      - veracode-upload-and-scan
+      - veracode-pipeline-scan
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Generate Markdown structure
+        run: python scripts/export_akita_akitando.py --out-dir dist/akitando --overwrite
+
+      - name: Create export zip package
+        run: |
+          cd dist
+          zip -r "../akitando-export-${GITHUB_RUN_NUMBER}.zip" akitando
+
+      - name: Upload export zip artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: akitando-export-zip
+          path: akitando-export-${{ github.run_number }}.zip
+          if-no-files-found: error
+          retention-days: 30
