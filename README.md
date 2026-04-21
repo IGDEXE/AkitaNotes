@@ -2,6 +2,12 @@
 
 Script para exportar as postagens da seção `Akitando` do blog do Akita para arquivos Markdown.
 
+## Quem é o Akita
+
+Fabio Akita, conhecido como Akita, é um desenvolvedor de software, empreendedor e criador de conteúdo brasileiro bastante conhecido na comunidade de tecnologia. Ele ficou popular por compartilhar opiniões técnicas diretas, análises de carreira, arquitetura de software, cultura de engenharia e fundamentos de computação, tanto no blog `AkitaOnRails` quanto no canal `Akitando`.
+
+Neste projeto, a ideia é transformar os posts dessa série em arquivos Markdown para facilitar consumo posterior, indexação, busca e processos de destilação de informação.
+
 ## Uso
 
 ```powershell
